@@ -25,6 +25,10 @@ struct point {
 	point *last; //last point  
 };
 
+void find_shortpath(point* cur){
+  
+}
+
 void visited(point* cur){
   final_steps++;
   final_path[final_steps][0] = cur->x;
@@ -49,22 +53,26 @@ void cleaning(){
   while (!s.empty())
   {
     cur = s.top();s.pop();
+    if(){
+
+    }
     if(floormap[cur->x][cur->y]=='0'||floormap[cur->x][cur->y]=='R'){
       //find next step
       /*
       my priority:
-      1.)右轉:、左方為0&&右方為1
+      1.)右轉:前方有1、左方為0&&右方為1
       2.)直行+左轉+直行:(如下示意)
-                x    x
+                 x    x
         11x -> 11 -> 11
          1      1     1
+        (cur) (next) (next2)
       3.)直行:左方有1、無牆
       */
       int frontside = cur->dir, rightside = (cur->dir+1)%4, leftside = cur->dir-1;
       if(leftside<0) leftside = leftside+4;
       if(floormap[cur->x + direction[frontside][0]][cur->y + direction[frontside][1]]=='1') //前方有1
         cur->dir =  rightside; //turn right
-      else if(floormap[cur->x + direction[leftside][0]][cur->y + direction[leftside][1]]=='1'){ //左方有1
+      else if(floormap[cur->x + direction[leftside][0]][cur->y + direction[leftside][1]]=='1'){ //左方有1 //2.)直行
         point* next = new point;
         next->x = cur->x + direction[cur->dir][0];
         next->y = cur->y + direction[cur->dir][1];
@@ -72,20 +80,26 @@ void cleaning(){
         next->last = cur;
         visited(next);
         s.push(next);
-        if(floormap[cur->x + 2*direction[leftside][0]][cur->y + 2*direction[leftside][1]]=='1'){ //2.)
+        if(floormap[cur->x + 2*direction[leftside][0]][cur->y + 2*direction[leftside][1]]=='1'){ //3.)+左轉+直行
           point* next2 = new point;
-          next2->x = next->x + direction[next->dir][0];
-          next2->y = next->y + direction[next->dir][1];
-          next2->dir = ;//next->dir;
+          next2->x = next->x + direction[leftside][0];
+          next2->y = next->y + direction[leftside][1];
+          next2->dir = leftside;
           next2->last = next;
           visited(next2);
           s.push(next2);
         }
+      }else if(floormap[cur->x + direction[leftside][0]][cur->y + direction[leftside][1]]=='0'&&floormap[cur->x + direction[rightside][0]][cur->y + direction[rightside][1]]=='1')
+        cur->dir =  rightside; //turn right
+      else{
+        point* next = new point;
+        next->x = cur->x + direction[cur->dir][0];
+        next->y = cur->y + direction[cur->dir][1];
+        next->dir = cur->dir;
+        next->last = cur;
+        visited(next);
+        s.push(next);
       }
-      else if(){
-
-      }
-        
     }
   }
 }
