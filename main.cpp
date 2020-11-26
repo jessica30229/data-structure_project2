@@ -6,6 +6,7 @@
 #include <stack>
 #include <vector>
 #include <list>
+#include <algorithm>
 using namespace std;
 
 int row, col, B;
@@ -242,7 +243,7 @@ int main (int argc, char *argv[]){
       }else
         dist_to_charger[i][j] = 1;
     }
-    cout << "\n";
+    //cout << "\n";
   }
   fin.close();
 
@@ -253,11 +254,11 @@ int main (int argc, char *argv[]){
   }
   else{
     calc_charger_dist();
-    cout << "max_steps=" << -max_steps << endl;
+    //cout << "max_steps=" << -max_steps << endl;
     if(-max_steps > B/2) {
        cout << "floormap invalid due to robot cannot reach farest place" << endl;
      }
-    dump_dist_array();
+    // dump_dist_array();
 
     vector<point> places;
     // sort unclean place by dist
