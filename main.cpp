@@ -4,110 +4,209 @@
 #include <string.h>
 #include <queue>
 #include <stack>
+#include <vector>
+#include <list>
 using namespace std;
 
 int row, col, B;
-// char **floormap;
+int robot_row, robot_col;
+int start_row, start_col;
 char floormap[1000][1000];
-int final_steps = 0, uncleaned_places = 0, chargepath = 0;
-int final_path[1000][2];
-// bool flag_charged = false;
-int direction[4][2] = {{-1,0},{0,-1},{1,0},{0,1}}; //left,up,right,down(西北東南方)
+int max_steps = 0;
+int dist_to_charger[1000][1000];
 
 struct point {
 	int x;
 	int y;
-  int dir; //記錄你的前方是哪方
-  /*
-    1
-  0   2
-    3
-  */
-	point *last; //last point  
+  point(int _x, int _y): x(_x),y(_y) {}
 };
 
-void find_shortpath(point* cur){
+vector<point> final_paths;
 
-}
 
-void visited(point* cur){
-  final_steps++;
-  final_path[final_steps][0] = cur->x;
-  final_path[final_steps][1] = cur->y;
-  floormap[cur->x][cur->y] = '2'; 
-}
+void calc_charger_dist(){
+  queue<point> p;
+  p.push(point(robot_row, robot_col));
 
-void cleaning(){
-  //if(uncleaned_place>B) flag_charged = true;
-  point* start = new point;
-  start->x = final_path[0][0];
-  start->y = final_path[0][1];
-  start->last = start;
-  if(start->x==row-1) start->dir = 1; //邊界下
-  else if(start->y==col-1) start->dir = 0; //邊界右
-  else if(start->x==0) start->dir = 3; //邊界上
-  else if(start->y==0) start->dir = 2; //邊界左
-  else start->dir = 0;//未在邊界(left) 
-  stack<point*> s;
-  s.push(start);
-  point* cur = start;
-  while (!s.empty())
-  {
-    cur = s.top();s.pop();
-    if(B == chargepath){
-      
-    }
-    if(floormap[cur->x][cur->y]=='0'||floormap[cur->x][cur->y]=='R'){
-      //find next step
-      /*
-      my priority:
-      1.)右轉:前方有1、左方為0&&右方為1
-      2.)直行+左轉+直行:(如下示意)
-                 x    x
-        11x -> 11 -> 11
-         1      1     1
-        (cur) (next) (next2)
-      3.)直行:左方有1、無牆
-      */
-      int frontside = cur->dir, rightside = (cur->dir+1)%4, leftside = cur->dir-1;
-      if(leftside<0) leftside = leftside+4;
-      if(floormap[cur->x + direction[frontside][0]][cur->y + direction[frontside][1]]=='1') //前方有1
-        cur->dir =  rightside; //turn right
-      else if(floormap[cur->x + direction[leftside][0]][cur->y + direction[leftside][1]]=='1'){ //左方有1 //2.)直行
-        point* next = new point;
-        next->x = cur->x + direction[cur->dir][0];
-        next->y = cur->y + direction[cur->dir][1];
-        next->dir = cur->dir;
-        next->last = cur;
-        visited(next);
-        s.push(next);
-        if(floormap[cur->x + 2*direction[leftside][0]][cur->y + 2*direction[leftside][1]]=='1'){ //3.)+左轉+直行
-          point* next2 = new point;
-          next2->x = next->x + direction[leftside][0];
-          next2->y = next->y + direction[leftside][1];
-          next2->dir = leftside;
-          next2->last = next;
-          visited(next2);
-          s.push(next2);
-        }
-      }else if(floormap[cur->x + direction[leftside][0]][cur->y + direction[leftside][1]]=='0'&&floormap[cur->x + direction[rightside][0]][cur->y + direction[rightside][1]]=='1')
-        cur->dir =  rightside; //turn right
-      else{
-        point* next = new point;
-        next->x = cur->x + direction[cur->dir][0];
-        next->y = cur->y + direction[cur->dir][1];
-        next->dir = cur->dir;
-        next->last = cur;
-        visited(next);
-        s.push(next);
+  while(!p.empty()){
+    point c = p.front(); p.pop();
+    if(c.x-1 > 0){ //up
+      if(dist_to_charger[c.x-1][c.y] == 0 || dist_to_charger[c.x-1][c.y] < dist_to_charger[c.x][c.y]-1){
+        dist_to_charger[c.x-1][c.y] = dist_to_charger[c.x][c.y]-1;
+        p.push(point(c.x-1, c.x-1));
       }
     }
+    if(c.x+1 < row){ //down
+      if(dist_to_charger[c.x+1][c.y] == 0 || dist_to_charger[c.x+1][c.y] < dist_to_charger[c.x][c.y]-1){
+        dist_to_charger[c.x+1][c.y] = dist_to_charger[c.x][c.y]-1;
+        p.push(point(c.x+1, c.y));
+      }
+    }
+    if(c.y-1 > 0){ //left
+      if(dist_to_charger[c.x][c.y-1] == 0 || dist_to_charger[c.x][c.y-1] < dist_to_charger[c.x][c.y]-1){
+        dist_to_charger[c.x][c.y-1] = dist_to_charger[c.x][c.y]-1;
+        p.push(point(c.x, c.y-1));
+      }
+    }
+    if(c.y+1 < col){ //right
+      if(dist_to_charger[c.x][c.y+1] == 0){
+        dist_to_charger[c.x][c.y+1] = dist_to_charger[c.x][c.y]-1;
+        p.push(point(c.x, c.y+1));
+      }
+    }
+    if(dist_to_charger[c.x][c.y]<max_steps)
+      max_steps = dist_to_charger[c.x][c.y];
   }
-  while (cur!=NULL){
-    point* tmp = cur;
-    cur = cur->last;
-    delete [] tmp;
-  } 
+  dist_to_charger[start_row][start_col] = 0;
+}
+
+void dump_dist_array(){
+  for(int i = 0; i < row; i++){
+    for(int j = 0; j < col; j++){
+      cout << dist_to_charger[i][j];
+    }
+    cout << "\n";
+  }
+}
+
+void dump_floormap() {
+  for(int i=0;i<row;i++) {
+    for(int j=0;j<col;j++) {
+       cout << floormap[i][j]; 
+    }
+    cout << endl;
+  }
+}
+
+// find a path from point 'to' to origin (robot place)
+void find_path(vector<point>* s, int r, int c, int max_dist) {
+  // check to origin?
+  if(r==robot_row && c==robot_col)
+    return;
+
+  // get current dist
+  int dist = dist_to_charger[r][c];
+
+  // cout << "r=" << r << ", c=" << c << ", dist=" << dist << ", max=" << max_dist << endl;
+
+  // push current point
+  s->push_back(point(r,c));
+
+  // set clean mark
+  if(floormap[r][c]=='0') {
+    floormap[r][c] = '2';
+  }
+
+  // dump_floormap();
+
+  // check 4 directions
+  int dist_up, dist_down, dist_left, dist_right;
+  char t_up, t_down, t_left, t_right;
+
+  dist_up = dist_down = dist_left = dist_right = 0;
+  t_up = t_down = t_left = t_right = '1';
+
+  // check up
+  if(r>1) {
+    dist_up = dist_to_charger[r-1][c];
+    t_up = floormap[r-1][c];
+    // cout << "up=" << dist_up << "," << t_up << endl;
+  }
+  // check down
+  if(r<row-1) {
+    dist_down = dist_to_charger[r+1][c];
+    t_down = floormap[r+1][c];
+    // cout << "down=" << dist_down << "," << t_down << endl;
+  }
+  // check left
+  if(c>1) {
+    dist_left = dist_to_charger[r][c-1];
+    t_left = floormap[r][c-1];
+    // cout << "left=" << dist_left << "," << t_left << endl;
+  }
+  // check right
+  if(c<col-1) {
+    dist_right = dist_to_charger[r][c+1];
+    t_right = floormap[r][c+1];
+    // cout << "right=" << dist_right << "," << t_right << endl;
+  }
+  
+  int next_r = 0, next_c = 0;
+
+  // find dist+1 and not cleaned first
+  // e.g.1 dist = -10, max_dist = -10 --> dist_up = -9 and type='0', is ok
+  // e.g.2 dist = -10, max_dist = -20 --> dist_up >= max_dist+1 and type='0'
+  bool found = false;
+  // find unclean frist
+  if(dist_up>=max_dist+1 && t_up=='0') {
+    next_r = r-1; next_c = c; found = true;
+  }
+  if(!found && dist_down>=max_dist+1 && t_down=='0') {
+    next_r = r+1; next_c = c; found = true;
+  }
+  if(!found && dist_left>=max_dist+1 && t_left=='0') {
+    next_r = r; next_c = c-1; found = true;
+  }
+  if(!found && dist_right>=max_dist+1 && t_right=='0') {
+    next_r = r; next_c = c+1; found = true;
+  }
+  // not found unclean, find shortest
+  if(!found) {
+    if(dist_up==dist+1) {
+      next_r = r-1; next_c = c; found = true;
+    }
+    if(!found && dist_down==dist+1) {
+      next_r = r+1; next_c = c; found = true;
+    }
+    if(!found && dist_left==dist+1) {
+      next_r = r; next_c = c-1; found = true;
+    }
+    if(!found && dist_right==dist+1) {
+      next_r = r; next_c = c+1; found = true;
+    }
+  }
+
+  find_path(s, next_r, next_c, max_dist+1);
+}
+
+void do_cleaning(vector<point>& places) {
+
+  // init final paths
+  final_paths.clear();
+  final_paths.push_back(point(robot_row, robot_col));
+
+  for(int i=0;i<places.size();i++) {
+    point p = places[i];
+    
+    if(floormap[p.x][p.y]=='2') { // already clean
+      continue;
+    }
+
+    vector<point> v;
+    // find path to p (shortest)
+    int dist = dist_to_charger[p.x][p.y];
+    find_path(&v, p.x, p.y, dist);
+    for(int i=v.size()-1;i>=0;i--) {
+      final_paths.push_back(v[i]);
+    }
+    // backward to origin
+    v.clear();
+    find_path(&v, p.x, p.y, -B-dist); // use negative number
+    for(int i=1;i<v.size();i++) {
+      final_paths.push_back(v[i]);
+    } 
+    final_paths.push_back(point(robot_row, robot_col));
+
+    // dump_floormap();    
+  }
+}
+
+int sort_point(point& a, point& b)
+{
+  int dist_a = dist_to_charger[a.x][a.y];
+  int dist_b = dist_to_charger[b.x][b.y];
+
+  return dist_a < dist_b;
 }
 
 int main (int argc, char *argv[]){
@@ -126,32 +225,53 @@ int main (int argc, char *argv[]){
   }
 
   fin >> row >> col >> B;
-  // *floormap = new char[row];
-  // for(int i = 0; i < row; i++){
-  //   floormap[i] = new char[col];
-  // }
 
   for(int i = 0; i < row; i++){
     for(int j = 0; j < col; j++){
       fin >> floormap[i][j];
       // cout << floormap[i][j];
       if(floormap[i][j] == 'R'){
-        final_path[0][0] = i;
-        final_path[0][1] = j;
-      }
-      if(floormap[i][j] == '0')
-        uncleaned_places += 1;
+        //final_path[0][0] = 
+        start_row = i;
+        //final_path[0][1] = 
+        start_col = j;
+        dist_to_charger[i][j] = 0;
+      }else if(floormap[i][j] == '0'){
+        //uncleaned_places += 1;
+        dist_to_charger[i][j] = 0;
+      }else
+        dist_to_charger[i][j] = 1;
     }
     cout << "\n";
   }
   fin.close();
+
 
   // cout << "row=" << row << ", col=" << col << ", B=" << B << "\n";
   if(row > 1000 || col > 1000){
     printf("invalid testcase.\n");
   }
   else{
-    cleaning();
+    calc_charger_dist();
+    cout << "max_steps=" << -max_steps << endl;
+    if(-max_steps > B/2) {
+       cout << "floormap invalid due to robot cannot reach farest place" << endl;
+     }
+    dump_dist_array();
+
+    vector<point> places;
+    // sort unclean place by dist
+    for(int i=0;i<row;i++) {
+      for(int j=0;j<col;j++) {
+          if(floormap[i][j]=='0') {
+            places.push_back(point(i,j));
+          }
+      }
+    }
+    sort(places.begin(), places.end(), sort_point);
+
+    // do cleaning
+    do_cleaning(places);
   }
 
   //ouput the file
@@ -162,16 +282,11 @@ int main (int argc, char *argv[]){
 	  cout << "Fail to open file: " << "final.path" << endl;
   }
 
-  //delete floormap
-  // for(int i = 0; i < row; i++){
-  //   delete [] floormap[i];
-  // }
-  // delete [] floormap;
-
   //output content
-  fout << final_steps << "\n";
-  for(int i = 0; i < final_steps + 1; i++){
-    fout << final_path[i][0] << " " << final_path[i][1] << "\n";
+  fout << final_paths.size()-1 << "\n";
+  for(int i = 0; i < final_paths.size(); i++){
+    point p = final_paths[i];
+    fout << p.x << " " << p.y << "\n";
   }
   fout.close();
 
