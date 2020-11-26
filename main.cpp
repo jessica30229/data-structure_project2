@@ -9,10 +9,11 @@ using namespace std;
 int row, col, B;
 // char **floormap;
 char floormap[1000][1000];
-int final_steps = 0, uncleaned_places = 0;
+int final_steps = 0, uncleaned_places = 0, chargepath = 0;
 int final_path[1000][2];
 // bool flag_charged = false;
 int direction[4][2] = {{-1,0},{0,-1},{1,0},{0,1}}; //left,up,right,down(西北東南方)
+
 struct point {
 	int x;
 	int y;
@@ -26,7 +27,7 @@ struct point {
 };
 
 void find_shortpath(point* cur){
-  
+
 }
 
 void visited(point* cur){
@@ -53,8 +54,8 @@ void cleaning(){
   while (!s.empty())
   {
     cur = s.top();s.pop();
-    if(){
-
+    if(B == chargepath){
+      
     }
     if(floormap[cur->x][cur->y]=='0'||floormap[cur->x][cur->y]=='R'){
       //find next step
@@ -102,9 +103,14 @@ void cleaning(){
       }
     }
   }
+  while (cur!=NULL){
+    point* tmp = cur;
+    cur = cur->last;
+    delete [] tmp;
+  } 
 }
 
-int main (int argc, char *argv[]) {
+int main (int argc, char *argv[]){
   if (!argc) {
     printf("usage: .exe filename\n");
     exit(-1);
